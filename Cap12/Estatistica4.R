@@ -149,8 +149,8 @@ x <- mtcars$mpg
 h <- hist(x, 
           breaks = 10, 
           col = "red", 
-          xlab = "Milhas Por GalÃ£o", 
-          main = "Histograma com Curva de DistribuiÃ§Ã£o") 
+          xlab = "Milhas Por Galão", 
+          main = "Histograma com Curva de Distribuiçao") 
 
 # Customizando o histograma
 xfit <- seq(min(x), max(x), length = 40) 
