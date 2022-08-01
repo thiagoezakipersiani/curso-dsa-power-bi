@@ -6,6 +6,7 @@ install.packages("dplyr")
 install.packages("reshape")
 install.packages("reshape")
 install.packages("e1071")
+install.packages("randomForest")
 
 #Carregando os pacotes
 library("Amelia")
@@ -15,6 +16,7 @@ library("dplyr")
 library("reshape")
 library("reshape")
 library("e1071")
+library("randomForest")
 
 #Carregando os dados do dataset
 dados_clientes <- read.csv("dados/dataset.csv")
@@ -167,3 +169,91 @@ ggplot(melt_compara_dados, aes(x=X1, y=value)) +
 dados_teste <-dados_clientes[-indice,]
 dim(dados_teste)
 dim(dados_treino)
+
+#Machine learning
+?randomForest
+modelo_v1 <-randomForest(inadimplente ~ ., data=dados_treino)
+modelo_v1
+
+#Avaliando o modelo
+plot(modelo_v1)
+
+#Previsões com dados testes
+previsoes_v1 <- predict(modelo_v1, dados_teste)
+
+#Configurações matriz 
+cm_v1 <- caret::confusionMatrix(previsoes_v1,dados_teste$inadimplente,positive="1")
+cm_v1
+
+#Calculando prevision, recall e f1 score, metricas de avaliação do modelo preditivo
+y <- dados_teste$inadimplente
+v_pred_v1<-previsoes_v1
+
+precision <- posPredValue(v_pred_v1,y)
+precision
+
+recall<- sensitivity(v_pred_v1,y)
+recall
+
+f1 <- (2* precision* recall) / (precision+recall)
+f1
+
+
+library(DMwR)
+
+table(dados_treino$inadimplente)
+prop.table(table(dados_treino$inadimplente))
+set.seed(9560)
+dados_treino_bal <- SMOTE(inadimplente ~ ., data= dados_treino)
+table(dados_treino_bal$inadimplente)
+prop.table(table(dados_treino_bal$inadimplente))
+
+#Construindo a segunda versão do modelo
+modelo_v2 <- randomForest(inadimplente ~ ., data= dados_treino_bal)
+modelo_v2
+
+#Avaliando o modelo
+plot(modelo_v2)
+
+#Previsões com dados testes
+previsoes_v2 <- predict(modelo_v2, dados_teste)
+
+#Configurações matriz 
+cm_v2 <- caret::confusionMatrix(previsoes_v2,dados_teste$inadimplente,positive="1")
+cm_v2
+
+#Calculando prevision, recall e f1 score, metricas de avaliação do modelo preditivo
+y <- dados_teste$inadimplente
+v_pred_v2<-previsoes_v2
+
+precision <- posPredValue(v_pred_v2,y)
+precision
+
+recall<- sensitivity(v_pred_v2,y)
+recall
+
+f1 <- (2* precision* recall) / (precision+recall)
+f1
+
+#Obtendo as variaveis mais importantes
+imp_var <- importance(modelo_v2)
+varImportance <- data.frame(Variables = row.names(imp_var),
+                            Importance= round(imp_var[, 'MeanDecreaseGini'],2))
+
+#Criando o rank de variaveis baseada na importancia
+rankImportance <- varImportance %>%
+  mutate(Rank = paste0('#', dense_rank(desc(Importance))))
+
+#Usando o ggplot2 para visualizar
+ggplot(rankImportance,
+       aes(x= reorder(Variables,Importance),
+       y= Importance,
+       fill= Importance)) +
+    geom_bar(stat='identity') +
+    geom_text(aes(x = Variables , y = 0.5 , label = Rank),
+              hjust = 0,
+              vjust= 0.55,
+              size=4,
+              colour='red') +
+  labs(x='Variables') + 
+  coord_flip()
