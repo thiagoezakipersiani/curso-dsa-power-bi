@@ -257,3 +257,38 @@ ggplot(rankImportance,
               colour='red') +
   labs(x='Variables') + 
   coord_flip()
+
+
+colnames(dados_treino_bal)
+modelo_v3 <-  randomForest(inadimplente ~ PAY_0 + PAY_2 + PAY_AMT2 + PAY_5 + BILL_AMT1,
+                           data= dados_treino_bal)
+modelo_v3
+
+#Avaliando o modelo
+plot(modelo_v3)
+
+#Previsões com dados testes
+previsoes_v3 <- predict(modelo_v3, dados_teste)
+
+#Configurações matriz 
+cm_v3 <- caret::confusionMatrix(previsoes_v3,dados_teste$inadimplente,positive="1")
+cm_v3
+
+#Calculando prevision, recall e f1 score, metricas de avaliação do modelo preditivo
+y <- dados_teste$inadimplente
+v_pred_v3<-previsoes_v3
+
+precision <- posPredValue(v_pred_v3,y)
+precision
+
+recall<- sensitivity(v_pred_v3,y)
+recall
+
+f1 <- (2* precision* recall) / (precision+recall)
+f1
+
+#Salvando o modelo
+saveRDS(modelo_v3, file="modelo/modelo_v3.rds")
+
+#Carregando o modelo 
+modelo_final <- readRDS('modelo/modelo_v3.rds')
